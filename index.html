@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <title>پاسخ DNS از پراکسی Worker</title>
+  <style>
+    body { font-family: sans-serif; background: #f9f9f9; padding: 2em; direction: rtl; }
+    h2 { color: #333; }
+    pre { background: #fff; padding: 1em; border: 1px solid #ccc; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h2>نتیجهٔ پرس‌وجوی DNS برای دامنه فیلترشده</h2>
+  <p>در حال دریافت پاسخ از پراکسی Cloudflare Worker...</p>
+  <script>
+    const target = "https://withered-rain-e328.xxx67034.workers.dev";
+    const query = window.location.search;
+
+    fetch(target + query, {
+      method: "GET",
+      headers: { "Accept": "application/json" }
+    })
+    .then(r => r.json())
+    .then(data => {
+      document.body.innerHTML += "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
+    })
+    .catch(e => {
+      document.body.innerHTML += "<pre>❌ خطا در اتصال: " + e + "</pre>";
+    });
+  </script>
+</body>
+</html>
