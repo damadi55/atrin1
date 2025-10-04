@@ -17,14 +17,14 @@
   <button onclick="resolve()">ارسال پرس‌وجو</button>
   <div id="output"></div>
 
-  <a href="tg://proxy?server=149.154.167.99&port=443&secret=ee00000000000000000000000000000000000000000000000000000000000000">
-    📡 افزودن پروکسی تلگرام (MTProto)
+  <a href="tg://proxy?server=proxy.digitalresistance.dog&port=443&secret=ee00000000000000000000000000000000000000000000000000000000000000">
+    📡 افزودن پروکسی تلگرام (MTProto فعال)
   </a>
 
   <script>
     function resolve() {
       const domain = document.getElementById("domain").value;
-      const worker = "https://proxy.atrin.ir.eu.org/dns-query";
+      const worker = "https://withered-rain-e328.xxx67034.workers.dev/dns-query";
       const query = buildDNSQuery(domain);
 
       fetch(worker, {
