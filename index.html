@@ -2,31 +2,81 @@
 <html lang="fa">
 <head>
   <meta charset="UTF-8">
-  <title>پاسخ DNS از پراکسی Worker</title>
+  <title>پراکسی DNS و تلگرام</title>
   <style>
-    body { font-family: sans-serif; background: #f9f9f9; padding: 2em; direction: rtl; }
+    body { font-family: sans-serif; background: #f0f0f0; padding: 2em; direction: rtl; }
     h2 { color: #333; }
-    pre { background: #fff; padding: 1em; border: 1px solid #ccc; overflow-x: auto; }
+    pre, a { background: #fff; padding: 1em; border: 1px solid #ccc; display: block; margin-top: 1em; text-decoration: none; color: #000; }
+    input, button { font-size: 1em; padding: 0.5em; margin-top: 1em; }
   </style>
 </head>
 <body>
-  <h2>نتیجهٔ پرس‌وجوی DNS برای دامنه فیلترشده</h2>
-  <p>در حال دریافت پاسخ از پراکسی Cloudflare Worker...</p>
-  <script>
-    const target = "https://withered-rain-e328.xxx67034.workers.dev";
-    const query = window.location.search;
+  <h2>پراکسی DNS برای عبور از فیلترینگ تلگرام</h2>
+  <p>دامنه مورد نظر را وارد کنید:</p>
+  <input id="domain" type="text" value="t.me">
+  <button onclick="resolve()">ارسال پرس‌وجو</button>
+  <div id="output"></div>
 
-    fetch(target + query, {
-      method: "GET",
-      headers: { "Accept": "application/json" }
-    })
-    .then(r => r.json())
-    .then(data => {
-      document.body.innerHTML += "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
-    })
-    .catch(e => {
-      document.body.innerHTML += "<pre>❌ خطا در اتصال: " + e + "</pre>";
-    });
+  <a href="tg://proxy?server=149.154.167.99&port=443&secret=ee00000000000000000000000000000000000000000000000000000000000000">
+    📡 افزودن پروکسی تلگرام (MTProto)
+  </a>
+
+  <script>
+    function resolve() {
+      const domain = document.getElementById("domain").value;
+      const worker = "https://proxy.atrin.ir.eu.org/dns-query";
+      const query = buildDNSQuery(domain);
+
+      fetch(worker, {
+        method: "POST",
+        headers: { "Content-Type": "application/dns-message" },
+        body: query
+      })
+      .then(r => r.arrayBuffer())
+      .then(buffer => {
+        const ip = parseDNSResponse(buffer);
+        document.getElementById("output").innerHTML =
+          "<pre>دامنه: " + domain + "\nIP: " + (ip || "یافت نشد") + "</pre>";
+      })
+      .catch(e => {
+        document.getElementById("output").innerHTML =
+          "<pre>❌ خطا در اتصال: " + e + "</pre>";
+      });
+    }
+
+    function buildDNSQuery(domain) {
+      const id = new Uint8Array([1, 2]);
+      const flags = new Uint8Array([1, 0]);
+      const qdcount = new Uint8Array([0, 1]);
+      const header = [...id, ...flags, ...qdcount, 0, 0, 0, 0, 0, 0];
+
+      const labels = domain.split(".").map(part => [part.length, ...part.split("").map(c => c.charCodeAt(0))]).flat();
+      const qname = [...labels, 0];
+      const qtype = [0, 1];
+      const qclass = [0, 1];
+
+      return new Uint8Array([...header, ...qname, ...qtype, ...qclass]);
+    }
+
+    function parseDNSResponse(buffer) {
+      const view = new DataView(buffer);
+      const ancount = view.getUint16(6);
+      if (ancount === 0) return null;
+
+      let offset = 12;
+      while (buffer[offset] !== 0) offset++;
+      offset += 5;
+
+      offset += 2;
+      const type = view.getUint16(offset); offset += 2;
+      offset += 6;
+      const rdlength = view.getUint16(offset); offset += 2;
+
+      if (type === 1 && rdlength === 4) {
+        return [...new Uint8Array(buffer.slice(offset, offset + 4))].join(".");
+      }
+      return null;
+    }
   </script>
 </body>
 </html>
